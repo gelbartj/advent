@@ -15,25 +15,24 @@ maskFilledBlanks :: String -> Int -> Char -> Int
 maskFilledBlanks maskString num keepChar = (num .&. sum xs) +
     toDec maskString where xs = xPositions maskString keepChar
 
-processLine :: (Map.Map Int Int, String) -> String -> Bool -> (Map.Map Int Int, String)
-processLine (memMap, currMask) str isPart1 = case take 3 str of
+data Part = Part1 | Part2 deriving Eq
+
+processLine :: Part -> (Map.Map Int Int, String) -> String -> (Map.Map Int Int, String)
+processLine isPart1 (memMap, currMask) str = case take 3 str of
     "mas" -> (memMap, val)
-    "mem" -> (if isPart1 then memProcess1 else memProcess2, currMask)
+    "mem" -> (if isPart1 == Part1 then memProcess1 else memProcess2, currMask)
     _ -> (memMap, currMask)
     where val = last $ words str
           memAddr = read (takeWhile isDigit (dropWhile (not . isDigit) str)) :: Int
-          memProcess1 = Map.insert memAddr (maskFilledBlanks currMask (read val :: Int) 'X') 
+          memProcess1 = Map.insert memAddr (maskFilledBlanks currMask (read val :: Int) 'X')
             memMap
-          memProcess2 = foldr (\item acc -> Map.insert item (read val :: Int) acc) 
+          memProcess2 = foldr (\item acc -> Map.insert item (read val :: Int) acc)
             memMap (processMemAddr currMask memAddr)
-
-processLine1 a b = processLine a b True
-processLine2 a b = processLine a b False
 
 -- For part 2
 -- Returns list of list of all possible amounts that need to be added
 floating :: String -> [Int]
-floating maskString = map sum $ go $ map (:[0]) (xPositions maskString 'X') 
+floating maskString = map sum $ go $ map (:[0]) (xPositions maskString 'X')
     where
     go [] = [[]]
     go (num:nums) = liftA2 (:) num (go nums)
@@ -48,6 +47,6 @@ main = do
   contents <- readFile "bitmask.txt"
   let contentLines = lines contents
   -- Part 1
-  print $ sum $ Map.elems $ fst $ foldl' processLine1 (Map.empty, "") contentLines
+  print $ sum $ Map.elems $ fst $ foldl' (processLine Part1) (Map.empty, "") contentLines
   -- Part 2
-  print $ sum $ Map.elems $ fst $ foldl' processLine2 (Map.empty, "") contentLines
+  print $ sum $ Map.elems $ fst $ foldl' (processLine Part2) (Map.empty, "") contentLines
